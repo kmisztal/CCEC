@@ -95,6 +95,10 @@ public class CECConfig extends Config {
         return getString("general.input.type");
     }
     
+    public double getCCECConstraints(){
+        return getDouble("ccec.constraints");
+    }
+    
     public static void main(String[] args) {
         CECConfig op = getInstance(null);
         System.out.println(op.densities);
@@ -126,4 +130,16 @@ public class CECConfig extends Config {
         }
         return singleton;
     }    
+    
+    
+    public static CECConfig getInstance() {
+        if(singleton == null){
+            throw new RuntimeException("load config file first");
+        }
+        return singleton;
+    }  
+
+    private double getDouble(String v) {
+        return Double.parseDouble(v);
+    }
 }

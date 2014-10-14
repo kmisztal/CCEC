@@ -6,6 +6,7 @@ import cec.cluster.types.ClusterKind;
 import cec.cluster.types.TypeOptions;
 import cec.cluster.types.gaussian.Gaussians;
 import cec.input.Data;
+import cec.options.CECConfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -20,6 +21,7 @@ import org.ejml.simple.SimpleMatrix;
 public class CECAtomic {
 
     private final Random rand = new Random();
+    private final double divideCnstraints;
 
     private final Data data;
     private final List<Pair<ClusterKind, TypeOptions>> clusterTypes;
@@ -47,7 +49,7 @@ public class CECAtomic {
         this.clusters = new ArrayList<>();
 
         this.SIZE_MIN = data.getSize() / 100;
-
+        this.divideCnstraints = CECConfig.getInstance().getCCECConstraints();
         fillClusters();
     }
 
@@ -137,7 +139,7 @@ public class CECAtomic {
 
                 //delete cluster
                 if (!Yj.isEmpty() && Yj.getCardinality() < SIZE_MIN) {
-                    System.out.println("-----delete----- " + Yj.getId());
+//                    System.out.println("-----delete----- " + Yj.getId());
                     Yj.getData().stream().forEach((p_del) -> {
                         clusters.get(getRandomCluster(Yj.getId())).add(p_del);
                     });
@@ -242,8 +244,8 @@ public class CECAtomic {
         if (it % 10 == 0) {
             List<Cluster> newClusters = new ArrayList<>();
             for (Cluster c : clusters) {
-                if (!c.isEmpty() && DSC(c) > 0.12) {
-//                    System.out.println("----divide--- " + c.getId());
+                if (!c.isEmpty() && DSC(c) > divideCnstraints) {
+                    System.out.println("----divide--- " + c.getId());
                     //divide
                     List<Pair<ClusterKind, TypeOptions>> params = new ArrayList<>();
                     params.add(clusterTypes.get(c.getId()));
@@ -296,7 +298,7 @@ public class CECAtomic {
         D /= Math.pow(c.getCardinality(), 2);
         D = Math.log(D);
 
-        System.out.println(ret + CIP + D);
+//        System.out.println(ret + CIP + D);
         return ret + CIP + D;
     }
 }
