@@ -253,7 +253,7 @@ public class CECAtomic {
 
                     CECAtomic best_result = null;
                     Data loc = new Data(c.getData());
-                    for (int i = 0; i < 10; ++i) {
+                    for (int i = 0; i < 16; ++i) {
                         final CECAtomic result = new CECAtomic(loc, params, 50);
 
                         result.simpleRun();
@@ -281,24 +281,56 @@ public class CECAtomic {
     }
 
     private double DSC(Cluster c) {
+//        final SimpleMatrix sigma2 = c.getCostFunction().getCov().scale(2.);
+//        final int dim = c.getDimension();
+//        final SimpleMatrix zeros = new SimpleMatrix(dim, 1);
+//        double ret = Math.log(Gaussians.N(dim, zeros, sigma2, zeros));
+//        double CIP = 0;
+//        CIP = c.getData().stream().map((x) -> Gaussians.N(dim, c.getMean(), sigma2, x.getMean())).reduce(CIP, (accumulator, _item) -> accumulator + _item);
+//        CIP /= c.getCardinality();
+//        CIP = -2. * Math.log(CIP);
+//        double D = 0;
+//        for (ClusterLike xi : c.getData()) {
+//            for (ClusterLike xj : c.getData()) {
+//                D += Gaussians.N(dim, zeros, sigma2, xi.getMean().minus(xj.getMean()));
+//            }
+//        }
+//        D /= Math.pow(c.getCardinality(), 2);
+//        D = Math.log(D);
+//
+////        System.out.println(ret + CIP + D);
+//        return ret + CIP + D;
         final SimpleMatrix sigma2 = c.getCostFunction().getCov().scale(2.);
         final int dim = c.getDimension();
+        final double card = c.getCardinality();
         final SimpleMatrix zeros = new SimpleMatrix(dim, 1);
-        double ret = Math.log(Gaussians.N(dim, zeros, sigma2, zeros));
+
+        //ret
+        final double ret = Math.log(Gaussians.N(dim, zeros, sigma2, zeros));
+
+        //CIP
         double CIP = 0;
         CIP = c.getData().stream().map((x) -> Gaussians.N(dim, c.getMean(), sigma2, x.getMean())).reduce(CIP, (accumulator, _item) -> accumulator + _item);
-        CIP /= c.getCardinality();
+        CIP /= card;
         CIP = -2. * Math.log(CIP);
-        double D = 0;
-        for (ClusterLike xi : c.getData()) {
-            for (ClusterLike xj : c.getData()) {
-                D += Gaussians.N(dim, zeros, sigma2, xi.getMean().minus(xj.getMean()));
+
+        //D
+        double D = Gaussians.N(dim, zeros, sigma2, zeros) * card;
+        for (int i = 0; i < card; ++i) {
+            SimpleMatrix p = c.getData().get(i).getMean();
+            for (int j = i + 1; j < card; ++j) {
+                D += 2. * Gaussians.N(dim, zeros, sigma2, p.minus(c.getData().get(j).getMean()));
             }
         }
+
+//        for (ClusterLike xi : c.getData()) {
+//            for (ClusterLike xj : c.getData()) {
+//                D += Gaussians.N(dim, zeros, sigma2, xi.getMean().minus(xj.getMean()));
+//            }
+//        }
         D /= Math.pow(c.getCardinality(), 2);
         D = Math.log(D);
 
-//        System.out.println(ret + CIP + D);
         return ret + CIP + D;
     }
 }

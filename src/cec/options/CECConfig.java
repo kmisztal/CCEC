@@ -96,7 +96,7 @@ public class CECConfig extends Config {
     }
     
     public double getCCECConstraints(){
-        return getDouble("ccec.constraints");
+        return getDouble(getString("ccec.constraints"));
     }
     
     public static void main(String[] args) {

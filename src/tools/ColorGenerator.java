@@ -13,7 +13,7 @@ public class ColorGenerator {
         Random r = new Random();
         Color[] ret = new Color[size];
         for (int i = 0; i < size; ++i) {
-            ret[i] = Color.getHSBColor(r.nextFloat(),//random hue, color
+            ret[i] = Color.getHSBColor(1.0f *i/size,//r.nextFloat(),//random hue, color
                     1.0f,//full saturation, 1.0 for 'colorful' colors, 0.0 for grey
                     1.0f //1.0 for bright, 0.0 for black
             );

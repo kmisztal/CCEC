@@ -1,6 +1,7 @@
 package cec.input.draw;
 
 import cec.cluster.Cluster;
+import cec.cluster.ClusterLike;
 import cec.run.CECAtomic;
 import de.erichseifert.gral.data.DataSource;
 import de.erichseifert.gral.data.DataTable;
@@ -16,8 +17,11 @@ import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.geom.Ellipse2D;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JFrame;
 import static javax.swing.JFrame.EXIT_ON_CLOSE;
+import org.ejml.simple.SimpleMatrix;
 import tools.ColorGenerator;
 
 /**
@@ -27,16 +31,10 @@ import tools.ColorGenerator;
 public class DataDraw extends JFrame {
 
     private final CECAtomic data;
-    private Color[] colors = {Color.red, Color.green, Color.gray,
-                                Color.magenta, Color.blue, Color.pink, 
-                                Color.cyan, Color.orange, Color.yellow};
+    private Color[] colors;
 
     public DataDraw(CECAtomic data) {
         this.data = data;
-
-        if (this.data.getNumberOfClusters() > colors.length) {
-            colors = ColorGenerator.randomColorArray(this.data.getNumberOfClusters());
-        }
         LookAndFeel.doIt();
     }
 
@@ -44,18 +42,25 @@ public class DataDraw extends JFrame {
         if (data.getDimension() != 2) {
             throw new RuntimeException("You can see only 2D data");
         }
-        final int k = data.getNumberOfClusters();
-
-        DataTable[] dt = new DataTable[k + 1 + data.getNumberOfClusters()];//new DataTable(Double.class)
+        //consider & display just not epty clusters
+        List<Cluster> clusters = new ArrayList<>();
+        data.getCLusters().stream().filter((c) -> (!c.isEmpty())).forEach((c) -> {
+            clusters.add(c);
+        });
+        final int k = clusters.size();
+        colors = ColorGenerator.randomColorArray(k);
+        DataTable[] dt = new DataTable[2 * k + 1];
         for (int i = 0; i < dt.length; ++i) {
             dt[i] = new DataTable(Double.class, Double.class);
         }
-
-        data.getCLusters().stream().forEach((c) -> {
-            c.getData().stream().forEach((p) -> {
-                dt[c.getId()].add(p.getMean().get(0, 0), p.getMean().get(1, 0));
-            });
-        });
+        
+        for (int i = 0; i < clusters.size(); i++) {
+            for(ClusterLike cc : clusters.get(i).getData()){
+                SimpleMatrix m = cc.getMean();
+                dt[i].add(m.get(0, 0),m.get(1, 0));
+            }
+        }
+        
 
         XYPlot plot = new XYPlot(dt);
 
@@ -65,7 +70,6 @@ public class DataDraw extends JFrame {
 
             // Style data series
             PointRenderer points1 = new DefaultPointRenderer2D();
-            points1.setShape(new Ellipse2D.Double(-3.0, -3.0, 6.0, 6.0));
             points1.setColor(colors[i]);
             plot.setPointRenderer(s, points1);
         }
@@ -75,15 +79,12 @@ public class DataDraw extends JFrame {
         line2.setStroke(new BasicStroke(6));
         plot.setLineRenderer(dt[k + 1], line2);
 
-        data.getCLusters().stream().filter((c) -> (!c.isEmpty())).map((c) -> c.getMean()).forEach((m) -> {
+        clusters.stream().map((c) -> c.getMean()).forEach((m) -> {
             dt[k].add(m.get(0, 0), m.get(1, 0));
         });
 
-        for (Cluster c : data.getCLusters()) {
+        for (Cluster c : clusters) {
             ++i;
-            if (c.isEmpty()) {
-                continue;
-            }
             Ellipse e = new Ellipse(c);
             e.addData(dt[i]);
             plot.setLineRenderer(dt[i], line2);
